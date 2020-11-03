@@ -18,10 +18,11 @@ public class McDojoDatabase {
 
     public void connect(String token) throws SQLException, ClassNotFoundException, IOException {
         REST r = new REST();
+        SecureDetails sd = new SecureDetails();
         ArrayList<String> tokens = r.getTokens();
         for (String s : tokens) {
             if (s.equals(token)) {
-                host = "localhost";
+                host = sd.getIP();
                 username = "discord";
                 password = "oFijpowijgwogjioapgejsloi2";
                 if (connection != null && !connection.isClosed()) {
