@@ -1,4 +1,10 @@
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -7,24 +13,27 @@ import java.util.ArrayList;
 
 public class McDojoDatabase {
 
+    private final String token1;
     private Connection connection;
     private String host, database, username, password;
     private int port;
     private static HttpURLConnection APIconnection;
 
-    public McDojoDatabase(String databaseName){
+    public McDojoDatabase(String databaseName, String token){
         database = databaseName;
+        token1 = token;
     }
 
-    public void connect(String token) throws SQLException, ClassNotFoundException, IOException {
-        REST r = new REST();
+    public void connect() throws SQLException, ClassNotFoundException, IOException {
+        System.out.println("Using Connect");
         SecureDetails sd = new SecureDetails();
-        ArrayList<String> tokens = r.getTokens();
-        for (String s : tokens) {
-            if (s.equals(token)) {
+            if (checkToken() == true) {
+                System.out.println("Connected...");
                 host = sd.getIP();
                 username = "discord";
-                password = "oFijpowijgwogjioapgejsloi2";
+                password = sd.getPass();
+                database = database;
+                port = 3306;
                 if (connection != null && !connection.isClosed()) {
                     return;
                 }
@@ -36,11 +45,8 @@ public class McDojoDatabase {
                     Class.forName("com.mysql.jdbc.Driver");
                     connection = DriverManager.getConnection("jdbc:mysql://" + this.host + ":" + this.port + "/" + this.database, this.username, password);
                 }
-                return;
             }
-        }
 
-        System.out.println("INVALID TOKEN");
 
     }
 
@@ -67,6 +73,51 @@ public class McDojoDatabase {
     public void set(PreparedStatement statement) throws SQLException {
 
         statement.execute();
+
+    }
+
+    private boolean checkToken() throws IOException {
+        BufferedReader reader;
+        String line;
+        StringBuffer responseContent = new StringBuffer();
+        URL url = new URL("https://the-token-master.glitch.me/getDreams");
+        APIconnection = (HttpURLConnection) url.openConnection();
+
+        APIconnection.setRequestMethod("GET");
+        APIconnection.setConnectTimeout(5000);
+        APIconnection.setReadTimeout(5000);
+
+        int status = APIconnection.getResponseCode();
+        System.out.println(status);
+
+        if(status > 299){
+            reader = new BufferedReader(new InputStreamReader(APIconnection.getErrorStream()));
+            while ((line = reader.readLine()) != null){
+                responseContent.append(line);
+            }
+        }
+        else{
+            reader = new BufferedReader(new InputStreamReader(APIconnection.getInputStream()));
+            while ((line = reader.readLine()) != null){
+                responseContent.append(line);
+            }
+        }
+
+        JsonParser jp = new JsonParser();
+        JsonArray dreams = (JsonArray) jp.parse(responseContent.toString());
+        System.out.println(token1);
+        for(int i = 0; i<dreams.size(); i++){
+            JsonObject dream = (JsonObject) dreams.get(i);
+            String foo = dream.get("dream").toString();
+            String token = foo.substring(1,foo.length()-1);
+            System.out.println(token);
+            if(token.equals(token1)){
+                return true;
+            }
+
+        }
+        APIconnection.disconnect();
+        return false;
 
     }
     /*public ResultSet getC1(String UUID) throws SQLException {
